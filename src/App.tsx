@@ -1,7 +1,7 @@
 function App() {
   return (
     <div className='App'>
-      <h1>Welcome to NodeChess</h1>
+      <h1 className='text-3xl font-bold underline'>Welcome to NodeChess</h1>
     </div>
   )
 }
