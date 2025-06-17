@@ -10,7 +10,11 @@ if (!BASE_URL) {
 export const loginAsGuest = async () => {
   try {
     const response = await axios.post(`${BASE_URL}/auth/guest`)
-    return response.data
+    const jwtToken = response.headers['Authorization']
+    if (!jwtToken) {
+      throw new Error('No JWT token received from the server')
+    }
+    return jwtToken
   } catch (error) {
     console.error('Error logging in as guest:', error)
     throw error
@@ -23,7 +27,11 @@ export const login = async (username: string, password: string) => {
       username,
       password,
     })
-    return response.data
+    const jwtToken = response.headers['Authorization']
+    if (!jwtToken) {
+      throw new Error('No JWT token received from the server')
+    }
+    return jwtToken
   } catch (error) {
     console.error('Error logging in:', error)
     throw error
