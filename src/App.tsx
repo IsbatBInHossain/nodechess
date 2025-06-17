@@ -1,7 +1,17 @@
-function App() {
+import React from 'react'
+import { Route, Routes } from 'react-router-dom'
+import { HomePage } from './pages/HomePage'
+import { LoginPage } from './pages/LoginPage'
+import { LobbyPage } from './pages/LobbyPage'
+
+const App: React.FC = () => {
   return (
     <div className='App'>
-      <h1 className='text-3xl font-bold underline'>Welcome to NodeChess</h1>
+      <Routes>
+        <Route path='/' element={<HomePage />} />
+        <Route path='/login' element={<LoginPage />} />
+        <Route path='/lobby' element={<LobbyPage />} />
+      </Routes>
     </div>
   )
 }
