@@ -1,5 +1,5 @@
 import axios from 'axios'
-const BASE_URL = import.meta.env.VITE_API_BASE_URL
+const BASE_URL = import.meta.env.VITE_API_URL
 
 if (!BASE_URL) {
   throw new Error(
@@ -10,11 +10,14 @@ if (!BASE_URL) {
 export const loginAsGuest = async () => {
   try {
     const response = await axios.post(`${BASE_URL}/auth/guest`)
-    const jwtToken = response.headers['Authorization']
-    if (!jwtToken) {
+    const authHeader = response.headers['Authorization']
+    const token = authHeader?.split(' ')[1]
+
+    if (!token) {
       throw new Error('No JWT token received from the server')
     }
-    return jwtToken
+    console.log('JWT Token:', token)
+    return token
   } catch (error) {
     console.error('Error logging in as guest:', error)
     throw error
@@ -27,11 +30,15 @@ export const login = async (username: string, password: string) => {
       username,
       password,
     })
-    const jwtToken = response.headers['Authorization']
-    if (!jwtToken) {
+    const authHeader = response.headers['Authorization']
+    const token = authHeader?.split(' ')[1]
+
+    console.log('JWT Token:', token)
+    if (!token) {
       throw new Error('No JWT token received from the server')
     }
-    return jwtToken
+
+    return token
   } catch (error) {
     console.error('Error logging in:', error)
     throw error
