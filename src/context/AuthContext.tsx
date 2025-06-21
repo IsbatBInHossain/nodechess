@@ -4,7 +4,7 @@ interface AuthContextType {
   token: string | null
   login: (username: string, password: string) => Promise<string>
   loginAsGuest: () => Promise<string>
-  register: (username: string, password: string) => Promise<void>
+  registerAndLogin: (username: string, password: string) => Promise<void>
   logout: () => void
 }
 

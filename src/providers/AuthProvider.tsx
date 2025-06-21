@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
-import { AuthContext } from '../context/AuthContext'
-import { login, loginAsGuest, register } from '../api/auth.service'
+import { useCallback, useEffect, useState } from 'react'
+import { login, loginAsGuest, register } from '../api/auth.service.ts'
+import { AuthContext } from '../context/AuthContext.tsx'
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -17,31 +17,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [token])
 
-  const handleLogin = async (
-    username: string,
-    password: string
-  ): Promise<string> => {
-    const token = await login(username, password)
-    setToken(token)
-    return token
-  }
+  const handleLogin = useCallback(
+    async (username: string, password: string): Promise<string> => {
+      const receivedToken = await login(username, password)
+      setToken(receivedToken)
+      return receivedToken
+    },
+    []
+  ) // Empty dependency array means this function is created only once.
 
-  const handleLoginAsGuest = async (): Promise<string> => {
-    const token = await loginAsGuest()
-    setToken(token)
-    return token
-  }
+  const handleLoginAsGuest = useCallback(async (): Promise<string> => {
+    const receivedToken = await loginAsGuest()
+    setToken(receivedToken)
+    return receivedToken
+  }, [])
 
-  const handleRegister = async (
-    username: string,
-    password: string
-  ): Promise<void> => {
-    await register(username, password)
-  }
+  const handleRegisterAndLogin = useCallback(
+    async (username: string, password: string): Promise<void> => {
+      await register(username, password)
+      const receivedToken = await login(username, password)
+      setToken(receivedToken)
+    },
+    []
+  )
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     setToken(null)
-  }
+  }, [])
 
   return (
     <AuthContext.Provider
@@ -49,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         token,
         login: handleLogin,
         loginAsGuest: handleLoginAsGuest,
-        register: handleRegister,
+        registerAndLogin: handleRegisterAndLogin,
         logout: handleLogout,
       }}
     >
