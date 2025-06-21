@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../hooks/useAuth'
 import { useWebSocket } from '../hooks/useWebSocket'
 import { type ServerMessage } from '../types/socket'
 
 type UserState = 'idle' | 'searching'
 
 export const LobbyPage: React.FC = () => {
-  const { token } = useAuth()
-  const { lastMessage, sendMessage, isAuth, isConnected } = useWebSocket(token)
+  const { lastMessage, sendMessage, isAuth, isConnected } = useWebSocket()
   const [userState, setUserState] = useState<UserState>('idle')
   const navigate = useNavigate()
 
