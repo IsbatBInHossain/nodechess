@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router-dom'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { LobbyPage } from './pages/LobbyPage'
+import { ProtectedRoute } from './components/ProtectedRoute'
 
 const App: React.FC = () => {
   return (
@@ -10,7 +11,9 @@ const App: React.FC = () => {
       <Routes>
         <Route path='/' element={<HomePage />} />
         <Route path='/login' element={<LoginPage />} />
-        <Route path='/lobby' element={<LobbyPage />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path='/lobby' element={<LobbyPage />} />
+        </Route>
       </Routes>
     </div>
   )
