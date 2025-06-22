@@ -4,6 +4,7 @@ import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { LobbyPage } from './pages/LobbyPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { GamePage } from './pages/GamePage'
 
 const App: React.FC = () => {
   return (
@@ -13,6 +14,7 @@ const App: React.FC = () => {
         <Route path='/login' element={<LoginPage />} />
         <Route element={<ProtectedRoute />}>
           <Route path='/lobby' element={<LobbyPage />} />
+          <Route path='/game/:gameId' element={<GamePage />} />
         </Route>
       </Routes>
     </div>
