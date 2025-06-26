@@ -6,6 +6,7 @@ import { Chessboard } from 'react-chessboard'
 import { type ServerMessage } from '../types/socket'
 import { PlayerInfo } from '../components/PlayerInfo'
 import { GameOverOverlay } from '../components/GameOverlay'
+import { Modal } from '../components/Modal'
 
 export const GamePage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>()
@@ -21,6 +22,15 @@ export const GamePage: React.FC = () => {
   const [whiteTime, setWhiteTime] = useState(initialWhiteTime || 0)
   const [blackTime, setBlackTime] = useState(initialBlackTime || 0)
   const [turn, setTurn] = useState('w')
+
+  // Modal States
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [modalContent, setModalContent] = useState({ title: '', body: '' })
+
+  const showAlert = (title: string, body: string) => {
+    setModalContent({ title, body })
+    setIsModalOpen(true)
+  }
 
   // Handle clock update logic
   useEffect(() => {
@@ -56,7 +66,7 @@ export const GamePage: React.FC = () => {
 
       case 'game_over':
         setGameOverData(message)
-        alert(`Game Over: ${message.reason}`) // Show alert as requested
+        showAlert('Game Over', `The game has ended: ${message.reason}.`)
         // Set a timer to redirect after 3 seconds
         redirectTimer = setTimeout(() => {
           navigate('/lobby')
@@ -64,7 +74,7 @@ export const GamePage: React.FC = () => {
         break
 
       case 'error':
-        alert(`Error: ${message.message}`)
+        showAlert('Error', message.message)
         // If the server rejected the move, revert the optimistic update
         setFen(game.fen())
         break
@@ -117,6 +127,13 @@ export const GamePage: React.FC = () => {
 
   return (
     <div className='flex items-center justify-center min-h-screen p-4 bg-slate-900'>
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={modalContent.title}
+      >
+        <p className='text-slate-300'>{modalContent.body}</p>
+      </Modal>
       <div className='flex flex-col lg:flex-row items-center gap-6'>
         {/* The Board */}
         <div className='relative w-[40vw] max-w-[600px] min-w-[300px]'>
