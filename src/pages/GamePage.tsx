@@ -3,7 +3,9 @@ import React, { useEffect, useState, useMemo } from 'react'
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import { useWebSocket } from '../hooks/useWebSocket'
 import { Chessboard } from 'react-chessboard'
-import { type ClientMessage, type ServerMessage } from '../types/socket'
+import { type ServerMessage } from '../types/socket'
+import { PlayerInfo } from '../components/PlayerInfo'
+import { GameOverOverlay } from '../components/GameOverlay'
 
 export const GamePage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>()
@@ -13,29 +15,29 @@ export const GamePage: React.FC = () => {
 
   const { color: playerColor } = state || {}
 
-  // Create a single, stable instance of the chess game using useMemo.
   const game = useMemo(() => new Chess(), [])
-
-  // State for the local, optimistic board position
   const [fen, setFen] = useState(game.fen())
-
-  // State to track if the game is over.
-  const [isGameOver, setIsGameOver] = useState(false)
+  const [gameOverData, setGameOverData] = useState<ServerMessage | null>(null)
 
   // Logic for handling server incoming message
   useEffect(() => {
     if (!lastMessage) return
 
     const message = lastMessage as ServerMessage
+    let redirectTimer: NodeJS.Timeout
+
     switch (message.type) {
       case 'move_made':
         game.load(message.fen)
         setFen(message.fen)
         break
       case 'game_over':
-        setIsGameOver(true)
-        // We could also display the reason using the message payload.
-        alert(`Game Over: ${message.reason}`)
+        setGameOverData(message)
+        alert(`Game Over: ${message.reason}`) // Show alert as requested
+        // Set a timer to redirect after 3 seconds
+        redirectTimer = setTimeout(() => {
+          navigate('/lobby')
+        }, 3000)
         break
       case 'error':
         alert(`Error: ${message.message}`)
@@ -43,52 +45,33 @@ export const GamePage: React.FC = () => {
         setFen(game.fen())
         break
     }
-  }, [lastMessage, game])
+    // Cleanup the timer if the component unmounts before it fires
+    return () => {
+      if (redirectTimer) clearTimeout(redirectTimer)
+    }
+  }, [lastMessage, game, navigate])
 
-  // --- Optimistic UI Update Logic ---
   const handlePieceDrop = (
     sourceSquare: string,
     targetSquare: string
   ): boolean => {
-    // Don't allow moves if it's not our turn or the game is over.
-    if (isGameOver || game.turn() !== playerColor) {
-      return false
-    }
+    if (gameOverData || game.turn() !== playerColor) return false
 
-    // Create a new move object.
-    const move = {
-      from: sourceSquare,
-      to: targetSquare,
-      promotion: 'q', // TODO: Handle piece promotion later
-    }
-
-    // Try to make the move locally
+    const move = { from: sourceSquare, to: targetSquare, promotion: 'q' }
     const result = game.move(move)
 
-    // If the move is illegal, `chess.js` returns null.
-    if (result === null) {
-      return false
-    }
+    if (result === null) return false
 
-    // If the move is legal, update the UI optimistically
+    // Optimistic UI Update
     setFen(game.fen())
 
-    // Send the valid move to the server for final validation.
-    const moveMessage: ClientMessage = {
-      type: 'move',
-      gameId: parseInt(gameId!),
-      move: { from: sourceSquare, to: targetSquare },
-    }
-    sendMessage(moveMessage)
-
-    return true // The move was successful locally.
+    // Send move to server
+    sendMessage({ type: 'move', gameId: parseInt(gameId!), move })
+    return true
   }
 
   const handleAbort = () => {
-    sendMessage({
-      type: 'abort',
-      gameId: parseInt(gameId!),
-    })
+    sendMessage({ type: 'abort', gameId: parseInt(gameId!) })
   }
 
   // Error boundary for direct navigation
@@ -102,24 +85,52 @@ export const GamePage: React.FC = () => {
     )
   }
 
+  const whoseTurn = game.turn() === 'w' ? 'White' : 'Black'
+  const opponentColorName = playerColor === 'w' ? 'Black' : 'White'
+  const playerColorName = playerColor === 'w' ? 'White' : 'Black'
+
   return (
-    <div>
-      <div>
-        <p>You are playing as {playerColor === 'w' ? 'White' : 'Black'}</p>
-        <p>Turn: {game.turn() === 'w' ? 'White' : 'Black'}</p>
-      </div>
-      <div>
-        <Chessboard
-          position={fen}
-          onPieceDrop={handlePieceDrop}
-          boardOrientation={playerColor === 'w' ? 'white' : 'black'}
-          arePiecesDraggable={!isGameOver}
-        />
-      </div>
-      <div>
-        <button onClick={handleAbort} disabled={isGameOver}>
-          Abort Game
-        </button>
+    <div className='flex items-center justify-center min-h-screen p-4 bg-slate-900'>
+      <div className='flex flex-col lg:flex-row items-center gap-6'>
+        {/* The Board */}
+        <div className='relative w-[40vw] max-w-[600px] min-w-[300px]'>
+          <Chessboard
+            position={fen}
+            onPieceDrop={handlePieceDrop}
+            boardOrientation={playerColor === 'w' ? 'white' : 'black'}
+            arePiecesDraggable={!gameOverData}
+          />
+          <GameOverOverlay
+            result={gameOverData}
+            onRedirect={() => navigate('/lobby')}
+          />
+        </div>
+
+        {/* Player Info and Controls */}
+        <div className='w-full lg:w-72 flex flex-col gap-4'>
+          <PlayerInfo
+            name={`Opponent (${opponentColorName})`}
+            isTurn={game.turn() !== playerColor}
+          />
+
+          <div className='p-4 bg-slate-800 rounded-lg text-center'>
+            <h2 className='text-xl font-bold text-white'>Turn</h2>
+            <p className='text-lg text-slate-300'>{whoseTurn}</p>
+          </div>
+
+          <PlayerInfo
+            name={`You (${playerColorName})`}
+            isTurn={game.turn() === playerColor}
+          />
+
+          <button
+            onClick={handleAbort}
+            disabled={!!gameOverData}
+            className='w-full py-3 mt-4 font-bold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:bg-slate-600 disabled:cursor-not-allowed transition-colors'
+          >
+            Abort Game
+          </button>
+        </div>
       </div>
     </div>
   )
