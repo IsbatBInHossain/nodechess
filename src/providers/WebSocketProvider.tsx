@@ -42,7 +42,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     ws.onmessage = event => {
       // Parse the message
       const message: ServerMessage = JSON.parse(event.data)
-      console.log('Received message:', message)
+      // console.log('Received message:', message)
 
       // Check for auth success specifically.
       if (message.type === 'auth_success') {

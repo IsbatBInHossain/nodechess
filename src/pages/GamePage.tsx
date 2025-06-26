@@ -85,6 +85,7 @@ export const GamePage: React.FC = () => {
     }
   }, [lastMessage, game, navigate])
 
+  // Handle piece move
   const handlePieceDrop = (
     sourceSquare: string,
     targetSquare: string
@@ -105,8 +106,14 @@ export const GamePage: React.FC = () => {
     return true
   }
 
-  const handleAbort = () => {
-    sendMessage({ type: 'abort', gameId: parseInt(gameId!) })
+  // Handles manual game ending logic
+  const handleGameEndAction = () => {
+    const isAbort = game.history().length < 2 // Abort if less than one full move has been made
+    console.log(`history length: ${game.history().length}`)
+    sendMessage({
+      type: isAbort ? 'abort' : 'resign',
+      gameId: parseInt(gameId!),
+    })
   }
 
   // Error boundary for direct navigation
@@ -171,11 +178,11 @@ export const GamePage: React.FC = () => {
           />
 
           <button
-            onClick={handleAbort}
+            onClick={handleGameEndAction}
             disabled={!!gameOverData}
             className='w-full py-3 mt-4 font-bold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:bg-slate-600 disabled:cursor-not-allowed transition-colors'
           >
-            Abort Game
+            {game.history().length < 2 ? 'Abort' : 'Resign'}
           </button>
         </div>
       </div>
