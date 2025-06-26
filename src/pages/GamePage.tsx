@@ -13,11 +13,29 @@ export const GamePage: React.FC = () => {
   const navigate = useNavigate()
   const { lastMessage, sendMessage } = useWebSocket()
 
-  const { color: playerColor } = state || {}
+  const { color: playerColor, initialWhiteTime, initialBlackTime } = state || {}
 
   const game = useMemo(() => new Chess(), [])
   const [fen, setFen] = useState(game.fen())
   const [gameOverData, setGameOverData] = useState<ServerMessage | null>(null)
+  const [whiteTime, setWhiteTime] = useState(initialWhiteTime || 0)
+  const [blackTime, setBlackTime] = useState(initialBlackTime || 0)
+  const [turn, setTurn] = useState('w')
+
+  // Handle clock update logic
+  useEffect(() => {
+    if (gameOverData) return
+
+    const timer = setInterval(() => {
+      if (turn === 'w') {
+        setWhiteTime((t: number) => Math.max(0, t - 1000))
+      } else {
+        setBlackTime((t: number) => Math.max(0, t - 1000))
+      }
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [turn, gameOverData])
 
   // Logic for handling server incoming message
   useEffect(() => {
@@ -29,8 +47,13 @@ export const GamePage: React.FC = () => {
     switch (message.type) {
       case 'move_made':
         game.load(message.fen)
+        // Sync all states with server
         setFen(message.fen)
+        setWhiteTime(message.whiteTime)
+        setBlackTime(message.blackTime)
+        setTurn(message.turn)
         break
+
       case 'game_over':
         setGameOverData(message)
         alert(`Game Over: ${message.reason}`) // Show alert as requested
@@ -39,9 +62,10 @@ export const GamePage: React.FC = () => {
           navigate('/lobby')
         }, 3000)
         break
+
       case 'error':
         alert(`Error: ${message.message}`)
-        // If the server rejected our move, revert the optimistic update
+        // If the server rejected the move, revert the optimistic update
         setFen(game.fen())
         break
     }
@@ -64,6 +88,7 @@ export const GamePage: React.FC = () => {
 
     // Optimistic UI Update
     setFen(game.fen())
+    setTurn(game.turn())
 
     // Send move to server
     sendMessage({ type: 'move', gameId: parseInt(gameId!), move })
@@ -85,9 +110,10 @@ export const GamePage: React.FC = () => {
     )
   }
 
-  const whoseTurn = game.turn() === 'w' ? 'White' : 'Black'
   const opponentColorName = playerColor === 'w' ? 'Black' : 'White'
   const playerColorName = playerColor === 'w' ? 'White' : 'Black'
+  const opponentTime = playerColor === 'w' ? blackTime : whiteTime
+  const myTime = playerColor === 'w' ? whiteTime : blackTime
 
   return (
     <div className='flex items-center justify-center min-h-screen p-4 bg-slate-900'>
@@ -110,17 +136,21 @@ export const GamePage: React.FC = () => {
         <div className='w-full lg:w-72 flex flex-col gap-4'>
           <PlayerInfo
             name={`Opponent (${opponentColorName})`}
-            isTurn={game.turn() !== playerColor}
+            isTurn={turn !== playerColor}
+            time={opponentTime}
           />
 
           <div className='p-4 bg-slate-800 rounded-lg text-center'>
             <h2 className='text-xl font-bold text-white'>Turn</h2>
-            <p className='text-lg text-slate-300'>{whoseTurn}</p>
+            <p className='text-lg text-slate-300'>
+              {turn === 'w' ? 'White' : 'Black'}
+            </p>
           </div>
 
           <PlayerInfo
             name={`You (${playerColorName})`}
-            isTurn={game.turn() === playerColor}
+            isTurn={turn === playerColor}
+            time={myTime}
           />
 
           <button
