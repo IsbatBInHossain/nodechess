@@ -8,6 +8,7 @@ import { PlayerInfo } from '../components/PlayerInfo'
 import { GameOverOverlay } from '../components/GameOverlay'
 import { Modal } from '../components/Modal'
 import { CountdownOverlay } from '../components/CountdownOverlay'
+import { GameNotFound } from '../components/GameNotFound'
 
 type GamePhase = 'pregame' | 'playing' | 'over'
 
@@ -174,13 +175,7 @@ export const GamePage: React.FC = () => {
 
   // Error boundary for direct navigation
   if (!playerColor) {
-    return (
-      <div>
-        <h1>Error</h1>
-        <p>No game data found. You cannot join a game directly.</p>
-        <button onClick={() => navigate('/lobby')}>Return to Lobby</button>
-      </div>
-    )
+    return <GameNotFound />
   }
 
   const opponentColorName = playerColor === 'w' ? 'Black' : 'White'
