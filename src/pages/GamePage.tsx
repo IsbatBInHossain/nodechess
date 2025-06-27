@@ -1,5 +1,5 @@
 import { Chess } from 'chess.js'
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState, useMemo, useRef } from 'react'
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import { useWebSocket } from '../hooks/useWebSocket'
 import { Chessboard } from 'react-chessboard'
@@ -33,10 +33,35 @@ export const GamePage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalContent, setModalContent] = useState({ title: '', body: '' })
 
+  // timer callback ref
+  const timerCallback = useRef<() => void>(null)
+
   const showAlert = (title: string, body: string) => {
     setModalContent({ title, body })
     setIsModalOpen(true)
   }
+
+  // Timer callback
+  useEffect(() => {
+    timerCallback.current = () => {
+      setWhiteTime((prevTime: number) =>
+        turn === 'w' ? Math.max(0, prevTime - 1000) : prevTime
+      )
+      setBlackTime((prevTime: number) =>
+        turn === 'b' ? Math.max(0, prevTime - 1000) : prevTime
+      )
+    }
+  }, [turn])
+
+  // Update the black and white time
+  useEffect(() => {
+    if (typeof initialWhiteTime === 'number') {
+      setWhiteTime(initialWhiteTime)
+    }
+    if (typeof initialBlackTime === 'number') {
+      setBlackTime(initialBlackTime)
+    }
+  }, [initialWhiteTime, initialBlackTime])
 
   // Handle the countdown logic
   useEffect(() => {
@@ -66,15 +91,14 @@ export const GamePage: React.FC = () => {
     if (gamePhase !== 'playing') return
 
     const timer = setInterval(() => {
-      if (turn === 'w') {
-        setWhiteTime((t: number) => Math.max(0, t - 1000))
-      } else {
-        setBlackTime((t: number) => Math.max(0, t - 1000))
+      // On every tick, it calls the LATEST version of the callback from the ref.
+      if (timerCallback.current) {
+        timerCallback.current()
       }
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [turn, gamePhase])
+  }, [gamePhase])
 
   // Logic for handling server incoming message
   useEffect(() => {
@@ -163,6 +187,8 @@ export const GamePage: React.FC = () => {
   const playerColorName = playerColor === 'w' ? 'White' : 'Black'
   const opponentTime = playerColor === 'w' ? blackTime : whiteTime
   const myTime = playerColor === 'w' ? whiteTime : blackTime
+
+  console.log('GamePage is re-rendering. White time:', whiteTime)
 
   return (
     <div className='flex items-center justify-center min-h-screen p-4 bg-slate-900'>
