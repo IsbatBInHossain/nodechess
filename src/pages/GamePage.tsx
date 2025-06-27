@@ -22,6 +22,7 @@ export const GamePage: React.FC = () => {
   const [whiteTime, setWhiteTime] = useState(initialWhiteTime || 0)
   const [blackTime, setBlackTime] = useState(initialBlackTime || 0)
   const [turn, setTurn] = useState('w')
+  const [plyCount, setPlyCount] = useState(0)
 
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -62,6 +63,7 @@ export const GamePage: React.FC = () => {
         setWhiteTime(message.whiteTime)
         setBlackTime(message.blackTime)
         setTurn(message.turn)
+        setPlyCount(prevCount => prevCount + 1)
         break
 
       case 'game_over':
@@ -108,8 +110,8 @@ export const GamePage: React.FC = () => {
 
   // Handles manual game ending logic
   const handleGameEndAction = () => {
-    const isAbort = game.history().length < 2 // Abort if less than one full move has been made
-    console.log(`history length: ${game.history().length}`)
+    const isAbort = plyCount < 2 // Abort if less than one full move has been made
+    console.log(`history length: ${plyCount}`)
     sendMessage({
       type: isAbort ? 'abort' : 'resign',
       gameId: parseInt(gameId!),
@@ -182,7 +184,7 @@ export const GamePage: React.FC = () => {
             disabled={!!gameOverData}
             className='w-full py-3 mt-4 font-bold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:bg-slate-600 disabled:cursor-not-allowed transition-colors'
           >
-            {game.history().length < 2 ? 'Abort' : 'Resign'}
+            {plyCount < 2 ? 'Abort' : 'Resign'}
           </button>
         </div>
       </div>
