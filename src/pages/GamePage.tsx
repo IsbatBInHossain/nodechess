@@ -7,6 +7,7 @@ import { type ServerMessage } from '../types/socket'
 import { PlayerInfo } from '../components/PlayerInfo'
 import { GameOverOverlay } from '../components/GameOverlay'
 import { Modal } from '../components/Modal'
+import { CountdownOverlay } from '../components/CountdownOverlay'
 
 type GamePhase = 'pregame' | 'playing' | 'over'
 
@@ -37,23 +38,26 @@ export const GamePage: React.FC = () => {
     setIsModalOpen(true)
   }
 
-  // Handle countdown logic
+  // Handle the countdown logic
   useEffect(() => {
-    // Only run during the 'pregame' phase.
     if (gamePhase === 'pregame') {
       const timer = setInterval(() => {
         setCountDown(prev => {
-          if (prev === 1) {
+          if (prev <= 1) {
+            // Check for less than or equal to 1
             clearInterval(timer)
-            setGamePhase('playing')
-            return 0
+            // After the countdown hits 0, wait a brief moment before starting the game
+            setTimeout(() => {
+              setGamePhase('playing')
+            }, 500)
           }
           return prev - 1
         })
       }, 1000)
 
-      // return cleanup function
-      return () => clearInterval(timer)
+      return () => {
+        clearInterval(timer)
+      }
     }
   }, [gamePhase])
 
@@ -177,6 +181,10 @@ export const GamePage: React.FC = () => {
             onPieceDrop={handlePieceDrop}
             boardOrientation={playerColor === 'w' ? 'white' : 'black'}
             arePiecesDraggable={gamePhase === 'playing' && !gameOverData}
+          />
+          <CountdownOverlay
+            isActive={gamePhase === 'pregame'}
+            countdown={countdown}
           />
           <GameOverOverlay
             result={gameOverData}
