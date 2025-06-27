@@ -8,6 +8,8 @@ import { PlayerInfo } from '../components/PlayerInfo'
 import { GameOverOverlay } from '../components/GameOverlay'
 import { Modal } from '../components/Modal'
 
+type GamePhase = 'pregame' | 'playing' | 'over'
+
 export const GamePage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>()
   const { state } = useLocation()
@@ -17,6 +19,8 @@ export const GamePage: React.FC = () => {
   const { color: playerColor, initialWhiteTime, initialBlackTime } = state || {}
 
   const game = useMemo(() => new Chess(), [])
+  const [gamePhase, setGamePhase] = useState<GamePhase>('pregame')
+  const [countdown, setCountDown] = useState(3)
   const [fen, setFen] = useState(game.fen())
   const [gameOverData, setGameOverData] = useState<ServerMessage | null>(null)
   const [whiteTime, setWhiteTime] = useState(initialWhiteTime || 0)
@@ -33,9 +37,29 @@ export const GamePage: React.FC = () => {
     setIsModalOpen(true)
   }
 
+  // Handle countdown logic
+  useEffect(() => {
+    // Only run during the 'pregame' phase.
+    if (gamePhase === 'pregame') {
+      const timer = setInterval(() => {
+        setCountDown(prev => {
+          if (prev === 1) {
+            clearInterval(timer)
+            setGamePhase('playing')
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+
+      // return cleanup function
+      return () => clearInterval(timer)
+    }
+  }, [gamePhase])
+
   // Handle clock update logic
   useEffect(() => {
-    if (gameOverData) return
+    if (gamePhase !== 'playing') return
 
     const timer = setInterval(() => {
       if (turn === 'w') {
@@ -46,7 +70,7 @@ export const GamePage: React.FC = () => {
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [turn, gameOverData])
+  }, [turn, gamePhase])
 
   // Logic for handling server incoming message
   useEffect(() => {
@@ -68,6 +92,7 @@ export const GamePage: React.FC = () => {
 
       case 'game_over':
         setGameOverData(message)
+        setGamePhase('over')
         showAlert('Game Over', `The game has ended: ${message.reason}.`)
         // Set a timer to redirect after 3 seconds
         redirectTimer = setTimeout(() => {
@@ -92,7 +117,8 @@ export const GamePage: React.FC = () => {
     sourceSquare: string,
     targetSquare: string
   ): boolean => {
-    if (gameOverData || game.turn() !== playerColor) return false
+    if (gamePhase !== 'playing' || gameOverData || game.turn() !== playerColor)
+      return false
 
     const move = { from: sourceSquare, to: targetSquare, promotion: 'q' }
     const result = game.move(move)
@@ -111,7 +137,7 @@ export const GamePage: React.FC = () => {
   // Handles manual game ending logic
   const handleGameEndAction = () => {
     const isAbort = plyCount < 2 // Abort if less than one full move has been made
-    console.log(`history length: ${plyCount}`)
+    // console.log(`history length: ${plyCount}`)
     sendMessage({
       type: isAbort ? 'abort' : 'resign',
       gameId: parseInt(gameId!),
@@ -150,7 +176,7 @@ export const GamePage: React.FC = () => {
             position={fen}
             onPieceDrop={handlePieceDrop}
             boardOrientation={playerColor === 'w' ? 'white' : 'black'}
-            arePiecesDraggable={!gameOverData}
+            arePiecesDraggable={gamePhase === 'playing' && !gameOverData}
           />
           <GameOverOverlay
             result={gameOverData}
@@ -181,7 +207,7 @@ export const GamePage: React.FC = () => {
 
           <button
             onClick={handleGameEndAction}
-            disabled={!!gameOverData}
+            disabled={gamePhase !== 'playing' || !!gameOverData}
             className='w-full py-3 mt-4 font-bold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:bg-slate-600 disabled:cursor-not-allowed transition-colors'
           >
             {plyCount < 2 ? 'Abort' : 'Resign'}
