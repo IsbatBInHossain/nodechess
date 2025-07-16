@@ -1,1 +1,26 @@
 @import 'tailwindcss';
+
+/* Define our theme using CSS variables under the @theme directive */
+@theme {
+  --color-primary-bg: #0B132B;
+  --color-surface: #1C2541;
+  --color-text-primary: #F8F7F2;
+  --color-text-secondary: #A8A29E;
+  --color-accent-primary: #C0392B;
+  --color-accent-secondary: #D4AF37;
+  --color-moon: #F8F7F2;
+
+  --font-family-sans: "Noto Sans JP", sans-serif;
+  --font-family-serif: "Shippori Mincho", serif;
+  
+  --background-image-washi: url('/src/assets/washi-texture.png');
+  
+  --box-shadow-moon-glow: 0 0 50px 10px rgba(248, 247, 242, 0.2);
+
+  --keyframes-zoom-fade-in: {
+    '0%': { transform: 'scale(0.5)', opacity: '0' },
+    '100%': { transform: 'scale(1)', opacity: '1' },
+  };
+
+  --animation-zoom-fade-in: zoom-fade-in 0.5s ease-out;
+}
