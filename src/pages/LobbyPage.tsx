@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useWebSocket } from '../hooks/useWebSocket'
 import { type ServerMessage } from '../types/socket'
+import { ThemedLayout } from '../components/ThemedLayout'
 
 type UserState = 'idle' | 'searching'
 
@@ -61,7 +62,8 @@ export const LobbyPage: React.FC = () => {
   )
 
   return (
-    <div className='flex flex-col items-center justify-center min-h-screen p-4 bg-slate-900'>
+    <ThemedLayout>
+      <div className='flex flex-col items-center justify-center min-h-screen p-4 bg-slate-900'>
       <div className='w-full max-w-md p-8 space-y-8 text-center bg-slate-800 rounded-xl shadow-lg'>
         <div>
           <h1 className='text-4xl font-bold text-white'>Lobby</h1>
@@ -113,5 +115,6 @@ export const LobbyPage: React.FC = () => {
         )}
       </div>
     </div>
+    </ThemedLayout>
   )
 }
