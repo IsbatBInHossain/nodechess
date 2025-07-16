@@ -5,6 +5,7 @@ import { LoginPage } from './pages/LoginPage'
 import { LobbyPage } from './pages/LobbyPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { GamePage } from './pages/GamePage'
+import { Footer } from './components/Footer'
 
 const App: React.FC = () => {
   return (
@@ -17,6 +18,7 @@ const App: React.FC = () => {
           <Route path='/game/:gameId' element={<GamePage />} />
         </Route>
       </Routes>
+      <Footer/>
     </div>
   )
 }
